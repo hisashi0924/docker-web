@@ -1,0 +1,58 @@
+version: "3.7"
+
+services:
+  nginx-proxy:
+    image: nginx
+    container_name: nginx-proxy-iwi
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d
+      - ./log:/var/log/nginx
+      - ./html:/usr/share/nginx/html
+      - ./letsencrypt:/etc/letsencrypt
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      TZ: Asia/Tokyo
+    command: "/bin/sh -c 'while :; do sleep 36h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    restart: always
+    depends_on:
+      - php
+
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: php-fpm-iwi
+    volumes:
+      - ./php:/var/www/html
+    environment:
+      TZ: Asia/Tokyo
+    restart: always
+
+  postgres:
+    image: postgres:16
+    container_name: postgres-iwi
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    restart: always
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot-iwi
+    volumes:
+      - ./html:/usr/share/nginx/html
+      - ./letsencrypt:/etc/letsencrypt
+      - ./log_letsencrypt:/var/log/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 24h & wait $${!}; done;'"
+    restart: always
+
+volumes:
+  postgres-data:
+

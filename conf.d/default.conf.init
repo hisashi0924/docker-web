@@ -1,0 +1,12 @@
+server {
+    listen       80 default;
+    listen  [::]:80;
+    server_name iwii.f5.si;
+
+    location ^~ /.well-known {
+        root /usr/share/nginx/html;
+    }
+    location / {
+       root /usr/share/nginx/html;
+    } 
+}
